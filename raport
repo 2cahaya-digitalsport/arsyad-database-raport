@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Raport Anggota - Dangsanak Sport Club</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDK (Compatibility Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        html, body {
+            touch-action: manipulation;
+            -webkit-text-size-adjust: 100%;
+        }
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+        .sidebar-link-active {
+            background-color: #059669;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+        .submenu-link-active {
+            background-color: rgba(16, 185, 129, 0.18);
+            color: #34d399;
+            border-left: 3px solid #10b981;
+        }
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        ::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+
+        /* ==================== CETAK PDF RAPORT RAPI TANPA TERPOTONG ==================== */
+        #print-area {
+            display: none;
+        }
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+        @media print {
+            html, body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body > *:not(#print-area) {
+                display: none !important;
+            }
+            #print-area {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .raport-page {
+                width: 100%;
+                box-sizing: border-box;
+                border: 1.5px solid #047857;
+                border-radius: 8px;
+                padding: 14px 16px;
+                background: #ffffff !important;
+                break-inside: avoid;
+                page-break-inside: avoid;
+                break-after: page;
+                page-break-after: always;
+            }
+            .raport-page:last-child {
+                break-after: auto;
+                page-break-after: auto;
+            }
+            .raport-kop {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2.5px solid #047857;
+                padding-bottom: 8px;
+                margin-bottom: 10px;
+            }
+            .raport-identitas {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                background: #f8fafc !important;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 8px 10px;
+                margin-bottom: 10px;
+            }
+            .raport-foto {
+                width: 54px;
+                height: 68px;
+                object-fit: cover;
+                border-radius: 4px;
+                border: 1px solid #94a3b8;
+                flex-shrink: 0;
+            }
+            .raport-inisial {
+                width: 54px;
+                height: 68px;
+                border-radius: 4px;
+                background: #d1fae5 !important;
+                color: #065f46 !important;
+                font-weight: 800;
+                font-size: 16pt;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid #10b981;
+                flex-shrink: 0;
+            }
+            .raport-bio-grid {
+                flex: 1;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 3px 14px;
+                font-size: 8.5pt;
+            }
+            .raport-section-title {
+                background: #047857 !important;
+                color: #ffffff !important;
+                font-size: 8.5pt;
+                font-weight: 700;
+                text-transform: uppercase;
+                padding: 4px 8px;
+                border-radius: 4px 4px 0 0;
+                display: flex;
+                justify-content: space-between;
+            }
+            .raport-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 8.2pt;
+                margin-bottom: 8px;
+            }
+            .raport-table th,
+            .raport-table td {
+                border: 1px solid #94a3b8;
+                padding: 3.5px 7px;
+            }
+            .raport-table th {
+                background: #ecfdf5 !important;
+                color: #065f46 !important;
+                font-weight: 700;
+                text-align: left;
+            }
+            .raport-summary {
+                display: flex;
+                gap: 10px;
+                align-items: stretch;
+                margin-top: 6px;
+                margin-bottom: 12px;
+            }
+            .raport-nilai-box {
+                width: 170px;
+                border: 1.5px solid #047857;
+                background: #ecfdf5 !important;
+                border-radius: 6px;
+                padding: 8px;
+                text-align: center;
+                flex-shrink: 0;
+            }
+            .raport-catatan-box {
+                flex: 1;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 7px 10px;
+                font-size: 8pt;
+            }
+            .raport-ttd {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 12px;
+                font-size: 8.2pt;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex">
+
+    <!-- OVERLAY SIDEBAR (MOBILE) -->
+    <div id="sidebar-overlay" onclick="setSidebar(false)" class="fixed inset-0 bg-black/60 backdrop-blur-[1px] z-40 hidden lg:hidden transition-opacity"></div>
+
+    <!-- SIDEBAR NAVIGASI RAPORT -->
+    <aside id="raport-sidebar"
+        class="fixed inset-y-0 left-0 z-50 w-72 shrink-0 bg-slate-900 text-slate-200 flex flex-col justify-between shadow-2xl transition-all duration-300 ease-in-out -translate-x-full lg:sticky lg:top-0 lg:h-screen lg:translate-x-0">
+        
+        <div class="flex flex-col flex-1 overflow-y-auto">
+            <!-- Header Sidebar -->
+            <div class="px-4 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-black tracking-wider text-white uppercase truncate">Raport Anggota</p>
+                        <p class="text-[10px] text-slate-400 truncate">Dangsanak Sport Club</p>
+                    </div>
+                </div>
+                <button type="button" onclick="setSidebar(false)" title="Tutup Sidebar"
+                    class="lg:hidden w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Info Panel -->
+            <div class="p-4 border-b border-slate-800/80 bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-sm border-2 border-emerald-400 shrink-0">
+                        DSC
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold text-white truncate">Evaluasi &amp; Penilaian</p>
+                        <p class="text-[11px] text-emerald-400 font-medium truncate">
+                            <i class="fa-solid fa-circle text-[8px] mr-1"></i>Sync Firebase Realtime
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu Sidebar -->
+            <nav class="p-3 space-y-1.5 flex-1">
+                <p class="px-3 pt-1 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Menu Raport</p>
+
+                <!-- 1. Data Peserta -->
+                <button type="button" onclick="pilihMenu('peserta')" id="nav-peserta"
+                    class="sidebar-btn sidebar-link-active w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left transition-all cursor-pointer">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-users w-4 text-center"></i>
+                        <span>Data Peserta</span>
+                    </span>
+                    <span id="badge-jml-peserta" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">0</span>
+                </button>
+
+                <!-- 2. Penilaian (Parent dengan Sub Menu Dinamis) -->
+                <div class="space-y-1">
+                    <button type="button" onclick="toggleSubmenuPenilaian()" id="nav-penilaian"
+                        class="sidebar-btn w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white text-left transition-all cursor-pointer">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-clipboard-check w-4 text-center text-amber-400"></i>
+                            <span>Penilaian</span>
+                        </span>
+                        <i id="chevron-penilaian" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                    </button>
+
+                    <!-- Sub Menu Dinamis (Fisik, Teknik, Taktik, dll) -->
+                    <div id="submenu-penilaian" class="pl-4 space-y-1">
+                        <!-- Di-render otomatis via JS -->
+                    </div>
+                </div>
+
+                <!-- 3. Daftar Nilai -->
+                <button type="button" onclick="pilihMenu('daftar-nilai')" id="nav-daftar-nilai"
+                    class="sidebar-btn w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white text-left transition-all cursor-pointer">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-table-list w-4 text-center text-cyan-400"></i>
+                        <span>Daftar Nilai</span>
+                    </span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Footer Sidebar -->
+        <div class="p-4 bg-slate-950 border-t border-slate-800">
+            <p class="text-[10px] text-center text-slate-500">Sistem Raport Digital Anggota<br>Dangsanak Sport Club</p>
+        </div>
+    </aside>
+
+    <!-- AREA KONTEN UTAMA -->
+    <div class="flex-1 flex flex-col min-w-0">
+
+        <!-- Topbar -->
+        <header class="bg-emerald-700 text-white sticky top-0 z-30 shadow-md">
+            <div class="px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button type="button" onclick="toggleSidebar()" title="Buka / Tutup Sidebar"
+                        class="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/40 flex items-center justify-center transition-colors shrink-0 cursor-pointer">
+                        <i class="fa-solid fa-bars text-base"></i>
+                    </button>
+                    <div class="min-w-0">
+                        <h1 id="topbar-title" class="text-sm sm:text-base font-bold truncate">Data Peserta</h1>
+                        <p class="text-[11px] text-emerald-100 truncate">Raport Anggota • Dangsanak Sport Club</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold bg-emerald-800/70 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                        <i class="fa-solid fa-database text-emerald-300"></i> Realtime
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Toast Notifikasi -->
+        <div id="toast-notif" class="fixed bottom-4 right-4 z-[70] hidden max-w-sm bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2.5">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+            <span id="toast-text">Berhasil disimpan.</span>
+        </div>
+
+        <!-- Konten Utama -->
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+            <!-- ==================== 1. MENU DATA PESERTA (TANPA TAMBAH PESERTA) ==================== -->
+            <section id="sec-peserta" class="raport-section space-y-5">
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-users text-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-sm sm:text-base font-bold text-slate-800">Data Peserta Terdaftar</h2>
+                            <p class="text-[11px] text-slate-500">Daftar peserta terdaftar dari database untuk penilaian raport dan cetak PDF</p>
+                        </div>
+                    </div>
+                    <span id="count-peserta-header" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        0 Peserta Terdaftar
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Form Edit Peserta (Hanya muncul saat tombol Edit ditekan) -->
+                    <div id="box-form-peserta" class="hidden lg:col-span-1 bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden h-fit">
+                        <div class="px-5 py-4 bg-amber-50/80 border-b border-amber-100 flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider">Edit Data Peserta</h3>
+                            <button type="button" onclick="tutupFormEditPeserta()" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <form id="form-peserta" onsubmit="simpanEditPeserta(event)" class="p-4 space-y-3 text-xs">
+                            <input type="hidden" id="peserta-id">
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Nama Lengkap *</label>
+                                <input type="text" id="peserta-nama" required placeholder="Nama lengkap anggota" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">NIA</label>
+                                    <input type="text" id="peserta-nia" placeholder="Nomor Induk" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Ranting / Rayon *</label>
+                                    <input type="text" id="peserta-rayon" list="list-opsi-rayon" required placeholder="Pilih / ketik" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Jenis Kelamin *</label>
+                                    <select id="peserta-jk" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                                        <option value="Putra">Putra</option>
+                                        <option value="Putri">Putri</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Kategori Usia *</label>
+                                    <select id="peserta-usia" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                                        <option value="Usia Dini">Usia Dini</option>
+                                        <option value="Pra Remaja">Pra Remaja</option>
+                                        <option value="Remaja">Remaja</option>
+                                        <option value="Dewasa">Dewasa</option>
+                                        <option value="Pelatih">Pelatih</option>
+                                        <option value="Warga">Warga</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Tanggal Lahir</label>
+                                    <input type="date" id="peserta-tgl" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Berat Badan (kg)</label>
+                                    <input type="number" id="peserta-bb" min="1" max="250" step="0.1" placeholder="Contoh: 55" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">No. WhatsApp</label>
+                                <input type="tel" id="peserta-wa" placeholder="08..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Pas Foto (Opsional)</label>
+                                <input type="file" id="peserta-foto" accept="image/*" class="w-full text-[11px] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 file:font-bold">
+                            </div>
+                            <div class="flex gap-2 pt-2">
+                                <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl cursor-pointer">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan
+                                </button>
+                                <button type="button" onclick="tutupFormEditPeserta()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl cursor-pointer">Batal</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tabel Data Peserta -->
+                    <div id="box-tabel-peserta" class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                            <span id="count-peserta" class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">0 Peserta</span>
+                            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                <select id="filter-peserta-rayon" onchange="paginationState.peserta=1; renderPeserta()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 font-semibold">
+                                    <option value="">Semua Ranting/Rayon</option>
+                                </select>
+                                <select id="filter-peserta-jk" onchange="paginationState.peserta=1; renderPeserta()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 font-semibold">
+                                    <option value="">Putra &amp; Putri</option>
+                                    <option value="putra">Putra</option>
+                                    <option value="putri">Putri</option>
+                                </select>
+                                <input type="text" id="cari-peserta" oninput="paginationState.peserta=1; renderPeserta()" placeholder="Cari nama, NIA, rayon..."
+                                    class="flex-1 sm:w-48 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="w-full text-left border-collapse border-y border-slate-200">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                        <th class="border-r border-slate-200 px-3 py-3 text-center w-12">No</th>
+                                        <th class="border-r border-slate-200 px-4 py-3 text-center">Foto</th>
+                                        <th class="border-r border-slate-200 px-4 py-3">Nama &amp; NIA</th>
+                                        <th class="border-r border-slate-200 px-4 py-3">Ranting / Rayon</th>
+                                        <th class="border-r border-slate-200 px-4 py-3">Gender, Usia &amp; BB</th>
+                                        <th class="border-r border-slate-200 px-4 py-3 text-center">Aksi Cepat Raport</th>
+                                        <th class="px-4 py-3 text-center">Kelola</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-peserta" class="divide-y divide-slate-200 text-xs">
+                                    <tr><td colspan="7" class="text-center py-8 text-slate-400">Memuat data peserta...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="pagination-peserta" class="hidden"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 2. MENU PENILAIAN (SUB MENU DINAMIS + KOLOM DINAMIS) ==================== -->
+            <section id="sec-penilaian" class="raport-section hidden space-y-5">
+                <!-- Header Penilaian -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div id="penilaian-icon-box" class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                <i id="penilaian-header-icon" class="fa-solid fa-dumbbell text-lg"></i>
+                            </div>
+                            <div>
+                                <h2 id="penilaian-header-title" class="text-sm sm:text-base font-bold text-slate-800">Penilaian Fisik</h2>
+                                <p class="text-[11px] text-slate-500">Kelola sub menu penilaian, atur kolom aspek, pilih peserta, dan simpan nilai</p>
+                            </div>
+                        </div>
+
+                        <!-- Form Tambah Sub Menu Baru -->
+                        <form onsubmit="tambahSubMenuPenilaian(event)" class="flex items-center gap-2 w-full sm:w-auto">
+                            <input type="text" id="input-nama-submenu-baru" required placeholder="Nama sub menu (mis: Jurus)"
+                                class="flex-1 sm:w-56 text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                            <button type="submit"
+                                class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer shrink-0">
+                                <i class="fa-solid fa-folder-plus text-emerald-400"></i>
+                                <span>Tambah Sub Menu</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Daftar Tab Sub Menu (Bisa Diklik untuk Pindah & Tombol Hapus Sub Menu) -->
+                    <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase mr-1">Sub Menu:</span>
+                        <div id="tab-submenu-container" class="flex flex-wrap items-center gap-2">
+                            <!-- Di-render dinamis via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kelola Kolom Penilaian (Bisa Tambah & Hapus) -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-xs sm:text-sm font-bold text-slate-800">
+                                <i class="fa-solid fa-table-columns text-emerald-600 mr-1.5"></i>
+                                Kelola Kolom Penilaian <span id="label-kategori-kolom" class="text-emerald-700 uppercase">FISIK</span>
+                            </h3>
+                            <p class="text-[11px] text-slate-500">Tambahkan kolom aspek baru atau hapus kolom yang tidak diperlukan</p>
+                        </div>
+                        <form onsubmit="tambahKolomPenilaian(event)" class="flex items-center gap-2 w-full sm:w-auto">
+                            <input type="text" id="input-nama-kolom-baru" required placeholder="Nama kolom baru (mis: Push Up)"
+                                class="flex-1 sm:w-64 text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                            <button type="submit"
+                                class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer shrink-0">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>Tambah Kolom</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Daftar Kolom Aktif dengan Tombol Hapus -->
+                    <div id="daftar-kolom-chips" class="flex flex-wrap gap-2 pt-1">
+                        <!-- Diisi via JS -->
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Form Input Nilai Peserta -->
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-emerald-200 shadow-sm overflow-hidden h-fit">
+                        <div class="px-5 py-4 bg-emerald-50/80 border-b border-emerald-100 flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-emerald-800 uppercase tracking-wider">
+                                <i class="fa-solid fa-pen-to-square mr-1.5"></i>Input Nilai <span id="form-judul-kategori">Fisik</span>
+                            </h3>
+                            <button type="button" onclick="resetFormPenilaian()" class="text-[11px] font-bold text-slate-500 hover:text-slate-700 cursor-pointer">
+                                Reset Form
+                            </button>
+                        </div>
+
+                        <form id="form-penilaian" onsubmit="simpanPenilaian(event)" class="p-4 sm:p-5 space-y-4 text-xs">
+                            <!-- Dropdown Nama Peserta Terdaftar -->
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Nama Peserta Terdaftar *</label>
+                                <select id="nilai-peserta-id" onchange="onPilihPesertaPenilaian()" required
+                                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold">
+                                    <option value="">-- Pilih Nama Peserta --</option>
+                                </select>
+                            </div>
+
+                            <!-- Kolom Gender dan Usia Otomatis + Input Berat Badan -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <div>
+                                    <label class="block font-bold text-slate-500 uppercase text-[10px] mb-1">
+                                        <i class="fa-solid fa-venus-mars mr-1 text-emerald-600"></i>Gender (Auto)
+                                    </label>
+                                    <input type="text" id="nilai-gender-auto" readonly placeholder="-"
+                                        class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-700 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-500 uppercase text-[10px] mb-1">
+                                        <i class="fa-solid fa-cake-candles mr-1 text-emerald-600"></i>Usia (Auto)
+                                    </label>
+                                    <input type="text" id="nilai-usia-auto" readonly placeholder="-"
+                                        class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-700 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-600 uppercase text-[10px] mb-1">
+                                        <i class="fa-solid fa-weight-scale mr-1 text-emerald-600"></i>Berat Badan (kg)
+                                    </label>
+                                    <input type="number" id="nilai-bb" min="1" max="250" step="0.1" placeholder="Contoh: 55"
+                                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-emerald-500">
+                                </div>
+                            </div>
+
+                            <!-- Input Nilai Dinamis Sesuai Kolom -->
+                            <div class="border-t border-slate-100 pt-3 space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <p class="font-bold text-slate-700 uppercase text-[11px]">Skor Aspek Penilaian (0 - 100)</p>
+                                    <span id="preview-rata-kategori" class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[11px]">Rata-rata: 0</span>
+                                </div>
+                                <div id="container-input-kolom" class="space-y-2.5">
+                                    <!-- Input per kolom di-render dinamis -->
+                                </div>
+                            </div>
+
+                            <!-- Catatan Tambahan -->
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Catatan Pelatih (Opsional)</label>
+                                <textarea id="nilai-catatan" rows="2" placeholder="Evaluasi singkat untuk kategori ini..."
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500"></textarea>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>SIMPAN PENILAIAN</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Tabel Hasil Penilaian Sub Menu Aktif (dengan Kolom Dinamis & Pagination) -->
+                    <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                            <div>
+                                <h3 class="text-xs sm:text-sm font-bold text-slate-800">Rekap Nilai <span id="tabel-judul-kategori" class="text-emerald-700">Fisik</span></h3>
+                                <p class="text-[11px] text-slate-500">Klik tombol edit untuk memperbarui nilai peserta</p>
+                            </div>
+                            <input type="text" id="cari-penilaian" oninput="paginationState.penilaian=1; renderTabelPenilaian()" placeholder="Cari nama peserta..."
+                                class="w-full sm:w-52 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="table-scroll">
+                            <table class="w-full text-left border-collapse border-y border-slate-200">
+                                <thead id="thead-penilaian">
+                                    <!-- Header dinamis sesuai kolom -->
+                                </thead>
+                                <tbody id="tbody-penilaian" class="divide-y divide-slate-200 text-xs">
+                                    <!-- Isi dinamis -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="pagination-penilaian" class="hidden mt-auto"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 3. MENU DAFTAR NILAI ==================== -->
+            <section id="sec-daftar-nilai" class="raport-section hidden space-y-5">
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-table-list text-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-sm sm:text-base font-bold text-slate-800">Daftar Nilai &amp; Cetak Raport PDF</h2>
+                            <p class="text-[11px] text-slate-500">Rekap seluruh nilai sub menu penilaian dan cetak PDF raport per siswa tanpa terpotong</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" onclick="cetakSemuaRaportPDF()"
+                            class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer">
+                            <i class="fa-solid fa-file-pdf text-rose-400"></i>
+                            <span>Cetak Semua Raport PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pengaturan Periode & Penandatangan Raport -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Periode / Semester Raport</label>
+                        <input type="text" id="raport-periode" value="Semester Ganjil 2026" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Nama Pembina / Ketua</label>
+                        <input type="text" id="raport-pembina" placeholder="Nama Ketua / Pembina" value="Ketua Dangsanak Sport Club" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Nama Pelatih Penilai</label>
+                        <input type="text" id="raport-pelatih" placeholder="Nama Pelatih Penilai" value="Tim Pelatih Dangsanak Sport Club" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold">
+                    </div>
+                </div>
+
+                <!-- Filter & Tabel Bergaris Daftar Nilai -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                        <span id="count-daftar-nilai" class="text-xs font-bold px-3 py-1 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-100">0 Anggota</span>
+                        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            <select id="filter-dn-rayon" onchange="paginationState.daftarNilai=1; renderDaftarNilai()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 font-semibold">
+                                <option value="">Semua Ranting/Rayon</option>
+                            </select>
+                            <select id="filter-dn-jk" onchange="paginationState.daftarNilai=1; renderDaftarNilai()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 font-semibold">
+                                <option value="">Putra &amp; Putri</option>
+                                <option value="putra">Putra</option>
+                                <option value="putri">Putri</option>
+                            </select>
+                            <input type="text" id="cari-daftar-nilai" oninput="paginationState.daftarNilai=1; renderDaftarNilai()" placeholder="Cari nama anggota..."
+                                class="flex-1 sm:w-48 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <div class="p-4 table-scroll">
+                        <table class="w-full text-left border-collapse border border-slate-400">
+                            <thead id="thead-daftar-nilai">
+                                <!-- Header dinamis sesuai sub menu penilaian -->
+                            </thead>
+                            <tbody id="tbody-daftar-nilai" class="text-xs">
+                                <tr><td colspan="7" class="border border-slate-300 text-center py-8 text-slate-400">Memuat daftar nilai...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="pagination-daftarNilai" class="hidden"></div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="bg-white border-t border-slate-200 py-4 text-center text-[11px] text-slate-400">
+            Raport Anggota &bull; Dangsanak Sport Club
+        </footer>
+    </div>
+
+    <!-- Datalist Ranting/Rayon -->
+    <datalist id="list-opsi-rayon"></datalist>
+
+    <!-- MODAL PREVIEW FOTO -->
+    <div id="modal-preview" onclick="tutupPreviewFoto()" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="relative max-w-md w-full bg-white rounded-2xl overflow-hidden shadow-2xl p-2">
+            <button onclick="tutupPreviewFoto()" class="absolute top-4 right-4 w-9 h-9 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img id="preview-img" src="" alt="Preview" class="w-full h-auto max-h-[75vh] object-contain rounded-xl bg-slate-50">
+            <div class="p-3 text-center">
+                <p id="preview-caption" class="text-sm font-bold text-slate-800"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- AREA KHUSUS CETAK PDF RAPORT -->
+    <div id="print-area"></div>
+
+    <script>
+        // --- KONFIGURASI FIREBASE ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyCFnbcw7EMDnoWJhzFgmNWgPTfW3v5pQ34",
+  authDomain: "arsyad-cac88.firebaseapp.com",
+  databaseURL: "https://arsyad-cac88-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "arsyad-cac88",
+  storageBucket: "arsyad-cac88.firebasestorage.app",
+  messagingSenderId: "978971872735",
+  appId: "1:978971872735:web:f96082b51a4a6329e3086a"
+};
+
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Pagination Otomatis 10 Nomor Per Halaman
+        const ITEMS_PER_PAGE = 10;
+        const paginationState = {
+            peserta: 1,
+            penilaian: 1,
+            daftarNilai: 1
+        };
+
+        // Default Sub Menu Penilaian
+        const DEFAULT_SUBMENUS = [
+            { id: "fisik", nama: "Fisik" },
+            { id: "teknik", nama: "Teknik" },
+            { id: "taktik", nama: "Taktik" }
+        ];
+
+        // Default Kolom Penilaian per Kategori
+        const DEFAULT_KRITERIA = {
+            fisik: [
+                { id: "f1", nama: "Daya Tahan / Stamina" },
+                { id: "f2", nama: "Kekuatan Otot" },
+                { id: "f3", nama: "Kecepatan & Kelincahan" },
+                { id: "f4", nama: "Kelentukan (Fleksibilitas)" }
+            ],
+            teknik: [
+                { id: "t1", nama: "Kuda-kuda & Sikap Pasang" },
+                { id: "t2", nama: "Pukulan & Serangan Tangan" },
+                { id: "t3", nama: "Tendangan" },
+                { id: "t4", nama: "Tangkisan, Elakan & Bantingan" }
+            ],
+            taktik: [
+                { id: "tk1", nama: "Strategi Penyerangan" },
+                { id: "tk2", nama: "Pertahanan & Antisipasi" },
+                { id: "tk3", nama: "Penguasaan Arena" },
+                { id: "tk4", nama: "Mental & Sportivitas" }
+            ]
+        };
+
+        // State Aplikasi
+        let dataAnggota = [];
+        let dataRayon = [];
+        let raportSubmenus = [...DEFAULT_SUBMENUS];
+        let raportKriteria = {
+            fisik: [...DEFAULT_KRITERIA.fisik],
+            teknik: [...DEFAULT_KRITERIA.teknik],
+            taktik: [...DEFAULT_KRITERIA.taktik]
+        };
+        let raportNilai = {};
+
+        let menuAktif = "peserta";
+        let subKategoriAktif = "fisik";
+        let submenuTerbuka = true;
+
+        // State Sidebar
+        let lastIsDesktop = window.innerWidth >= 1024;
+        let sidebarTerbuka = lastIsDesktop;
+
+        function setSidebar(buka) {
+            sidebarTerbuka = buka;
+            terapkanStateSidebar();
+        }
+
+        function toggleSidebar() {
+            sidebarTerbuka = !sidebarTerbuka;
+            terapkanStateSidebar();
+        }
+
+        function terapkanStateSidebar() {
+            const sidebar = document.getElementById("raport-sidebar");
+            const overlay = document.getElementById("sidebar-overlay");
+            const isDesktop = window.innerWidth >= 1024;
+
+            if (isDesktop) {
+                overlay.classList.add("hidden");
+                sidebar.classList.remove("translate-x-0", "-translate-x-full");
+                if (sidebarTerbuka) {
+                    sidebar.classList.remove("lg:-ml-72", "lg:opacity-0", "lg:pointer-events-none");
+                    sidebar.classList.add("lg:ml-0", "lg:opacity-100");
+                } else {
+                    sidebar.classList.remove("lg:ml-0", "lg:opacity-100");
+                    sidebar.classList.add("lg:-ml-72", "lg:opacity-0", "lg:pointer-events-none");
+                }
+            } else {
+                sidebar.classList.remove("lg:-ml-72", "lg:opacity-0", "lg:pointer-events-none", "lg:ml-0", "lg:opacity-100");
+                if (sidebarTerbuka) {
+                    sidebar.classList.remove("-translate-x-full");
+                    sidebar.classList.add("translate-x-0");
+                    overlay.classList.remove("hidden");
+                } else {
+                    sidebar.classList.remove("translate-x-0");
+                    sidebar.classList.add("-translate-x-full");
+                    overlay.classList.add("hidden");
+                }
+            }
+        }
+
+        window.addEventListener("resize", () => {
+            const isDesktopNow = window.innerWidth >= 1024;
+            if (isDesktopNow !== lastIsDesktop) {
+                lastIsDesktop = isDesktopNow;
+                sidebarTerbuka = isDesktopNow;
+                terapkanStateSidebar();
+            }
+        });
+
+        // ==================== HELPER PAGINATION OTOMATIS 10 NOMOR ====================
+        function paginateData(menu, list) {
+            const total = list.length;
+            const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+            let page = paginationState[menu] || 1;
+            if (page > totalPages) page = totalPages;
+            if (page < 1) page = 1;
+            paginationState[menu] = page;
+
+            const startIdx = (page - 1) * ITEMS_PER_PAGE;
+            const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, total);
+            const paged = list.slice(startIdx, endIdx);
+
+            renderPaginationControls(menu, page, totalPages, startIdx, endIdx, total);
+            return { paged, startIdx };
+        }
+
+        function renderPaginationControls(menu, page, totalPages, startIdx, endIdx, total) {
+            const container = document.getElementById("pagination-" + menu);
+            if (!container) return;
+
+            if (total === 0) {
+                container.classList.add("hidden");
+                container.innerHTML = "";
+                return;
+            }
+
+            const pages = [];
+            if (totalPages <= 5) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+                pages.push(1);
+                if (page > 3) pages.push("...");
+                const start = Math.max(2, page - 1);
+                const end = Math.min(totalPages - 1, page + 1);
+                for (let i = start; i <= end; i++) pages.push(i);
+                if (page < totalPages - 2) pages.push("...");
+                pages.push(totalPages);
+            }
+
+            const pageButtons = pages.map(p => {
+                if (p === "...") {
+                    return `<span class="px-2 py-1 text-slate-400 select-none">...</span>`;
+                }
+                const active = p === page;
+                return `
+                    <button type="button" onclick="gantiHalaman('${menu}', ${p})"
+                        class="min-w-[30px] h-[30px] px-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                            active
+                                ? "bg-emerald-600 text-white shadow-sm"
+                                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+                        }">
+                        ${p}
+                    </button>
+                `;
+            }).join("");
+
+            container.className = "px-4 py-3 border-t border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs";
+            container.innerHTML = `
+                <p class="text-[11px] text-slate-500 font-medium">
+                    Menampilkan <b class="text-slate-700">${startIdx + 1}–${endIdx}</b> dari <b class="text-slate-700">${total}</b> data
+                    <span class="text-slate-400">• Halaman ${page} / ${totalPages}</span>
+                </p>
+                <div class="flex items-center gap-1 flex-wrap justify-center">
+                    <button type="button" onclick="gantiHalaman('${menu}', ${page - 1})" ${page <= 1 ? "disabled" : ""}
+                        class="h-[30px] px-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </button>
+                    ${pageButtons}
+                    <button type="button" onclick="gantiHalaman('${menu}', ${page + 1})" ${page >= totalPages ? "disabled" : ""}
+                        class="h-[30px] px-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function gantiHalaman(menu, page) {
+            paginationState[menu] = page;
+            if (menu === "peserta") renderPeserta();
+            else if (menu === "penilaian") renderTabelPenilaian();
+            else if (menu === "daftarNilai") renderDaftarNilai();
+        }
+
+        // Helpers
+        function esc(str) {
+            if (str === null || str === undefined) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function safeJsonAttr(val) {
+            return JSON.stringify(val || "")
+                .replace(/'/g, "\\u0027")
+                .replace(/</g, "\\u003c")
+                .replace(/>/g, "\\u003e");
+        }
+
+        function klasifikasiGender(jk) {
+            const val = String(jk || "").trim().toLowerCase();
+            if (val === "l" || val.includes("putra") || val.includes("laki") || val.includes("pria")) return "putra";
+            if (val === "p" || val.includes("putri") || val.includes("perempuan") || val.includes("wanita")) return "putri";
+            return "lainnya";
+        }
+
+        function formatGenderLabel(jk) {
+            const g = klasifikasiGender(jk);
+            if (g === "putra") return "Putra";
+            if (g === "putri") return "Putri";
+            return jk || "-";
+        }
+
+        function hitungUmurTahun(tglLahir) {
+            if (!tglLahir) return null;
+            const lahir = new Date(tglLahir);
+            if (isNaN(lahir.getTime())) return null;
+            const today = new Date();
+            let umur = today.getFullYear() - lahir.getFullYear();
+            const m = today.getMonth() - lahir.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < lahir.getDate())) {
+                umur--;
+            }
+            return umur >= 0 ? umur : null;
+        }
+
+        function formatKategoriGender(item) {
+            const usia = (item.kualifikasi_usia || "").trim();
+            const gender = formatGenderLabel(item.jenis_kelamin);
+            return `${usia || "Umum"} ${gender !== "-" ? gender : ""}`.trim();
+        }
+
+        function getBeratBadanSiswa(item) {
+            if (!item) return "";
+            const bbAnggota = item.berat_badan;
+            const bbRaport = raportNilai[item.id] && raportNilai[item.id].berat_badan;
+            const val = (bbAnggota !== undefined && bbAnggota !== null && String(bbAnggota).trim() !== "")
+                ? bbAnggota
+                : (bbRaport !== undefined && bbRaport !== null && String(bbRaport).trim() !== "" ? bbRaport : "");
+            return val;
+        }
+
+        function formatBeratBadan(bb) {
+            if (bb === undefined || bb === null || String(bb).trim() === "") return "-";
+            const num = Number(bb);
+            if (isNaN(num) || num <= 0) return "-";
+            return `${num} kg`;
+        }
+
+        function getInisial(nama) {
+            const parts = String(nama || "P").trim().split(/\s+/);
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return (parts[0] || "P").slice(0, 2).toUpperCase();
+        }
+
+        function getPredikat(nilai) {
+            if (nilai === null || nilai === undefined || isNaN(nilai)) return { kode: "-", label: "Belum Dinilai", badge: "bg-slate-100 text-slate-500" };
+            if (nilai >= 90) return { kode: "A", label: "Sangat Baik", badge: "bg-emerald-100 text-emerald-800 border border-emerald-200" };
+            if (nilai >= 80) return { kode: "B", label: "Baik", badge: "bg-sky-100 text-sky-800 border border-sky-200" };
+            if (nilai >= 70) return { kode: "C", label: "Cukup", badge: "bg-amber-100 text-amber-800 border border-amber-200" };
+            return { kode: "D", label: "Perlu Pembinaan", badge: "bg-rose-100 text-rose-800 border border-rose-200" };
+        }
+
+        function getSubmenuMeta(subId, idx = 0) {
+            const preset = {
+                fisik: { icon: "fa-dumbbell", textColor: "text-emerald-400", boxClass: "w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0" },
+                teknik: { icon: "fa-hand-fist", textColor: "text-sky-400", boxClass: "w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0" },
+                taktik: { icon: "fa-chess-knight", textColor: "text-purple-400", boxClass: "w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0" }
+            };
+            if (preset[subId]) return preset[subId];
+            const palette = [
+                { icon: "fa-star", textColor: "text-amber-400", boxClass: "w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0" },
+                { icon: "fa-shield-halved", textColor: "text-teal-400", boxClass: "w-10 h-10 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center shrink-0" },
+                { icon: "fa-fire", textColor: "text-rose-400", boxClass: "w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0" }
+            ];
+            return palette[idx % palette.length];
+        }
+
+        let toastTimer = null;
+        function tampilkanNotif(pesan, isError = false) {
+            const toast = document.getElementById("toast-notif");
+            const icon = document.getElementById("toast-icon");
+            const text = document.getElementById("toast-text");
+            text.innerText = pesan;
+            icon.className = isError
+                ? "fa-solid fa-circle-exclamation text-rose-400 text-sm"
+                : "fa-solid fa-circle-check text-emerald-400 text-sm";
+            toast.classList.remove("hidden");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.add("hidden"), 3000);
+        }
+
+        function prosesFileFoto(inputId, existingData = "") {
+            return new Promise((resolve) => {
+                const input = document.getElementById(inputId);
+                const file = input && input.files ? input.files[0] : null;
+                if (!file) {
+                    resolve(existingData);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const maxDim = 600;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) {
+                                h = Math.round((h * maxDim) / w);
+                                w = maxDim;
+                            } else {
+                                w = Math.round((w * maxDim) / h);
+                                h = maxDim;
+                            }
+                        }
+                        const canvas = document.createElement("canvas");
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL("image/jpeg", 0.75));
+                    };
+                    img.onerror = () => resolve(e.target.result);
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ==================== RENDER & KELOLA SUB MENU PENILAIAN ====================
+        function renderSidebarSubmenus() {
+            const container = document.getElementById("submenu-penilaian");
+            if (!container) return;
+
+            const listHtml = raportSubmenus.map((sub, idx) => {
+                const meta = getSubmenuMeta(sub.id, idx);
+                const isActive = menuAktif === "penilaian" && subKategoriAktif === sub.id;
+                return `
+                    <div class="flex items-center gap-1 group">
+                        <button type="button" onclick='pilihMenu("penilaian", ${safeJsonAttr(sub.id)})' id="subnav-${esc(sub.id)}"
+                            class="subnav-btn flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all cursor-pointer ${
+                                isActive ? "submenu-link-active" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                            }">
+                            <i class="fa-solid ${meta.icon} w-4 text-center ${meta.textColor}"></i>
+                            <span class="truncate">${esc(sub.nama)}</span>
+                        </button>
+                        <button type="button" onclick='hapusSubMenuPenilaian(${safeJsonAttr(sub.id)}, ${safeJsonAttr(sub.nama)})' title="Hapus Sub Menu"
+                            class="w-7 h-7 rounded-lg text-slate-500 hover:bg-rose-600 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0">
+                            <i class="fa-solid fa-trash text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+            }).join("");
+
+            const tambahBtnHtml = `
+                <button type="button" onclick="bukaTambahSubMenuDariSidebar()"
+                    class="w-full flex items-center gap-2 px-3 py-2 mt-1 rounded-lg text-[11px] font-bold text-emerald-400 hover:bg-emerald-500/15 border border-dashed border-emerald-500/40 text-left transition-colors cursor-pointer">
+                    <i class="fa-solid fa-plus w-4 text-center"></i>
+                    <span>Tambah Sub Menu</span>
+                </button>
+            `;
+
+            container.innerHTML = listHtml + tambahBtnHtml;
+        }
+
+        function bukaTambahSubMenuDariSidebar() {
+            pilihMenu("penilaian", subKategoriAktif);
+            setTimeout(() => {
+                const inp = document.getElementById("input-nama-submenu-baru");
+                if (inp) {
+                    inp.focus();
+                    inp.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 100);
+        }
+
+        function renderTabSubmenus() {
+            const container = document.getElementById("tab-submenu-container");
+            if (!container) return;
+
+            container.innerHTML = raportSubmenus.map((sub, idx) => {
+                const meta = getSubmenuMeta(sub.id, idx);
+                const isActive = subKategoriAktif === sub.id;
+                return `
+                    <div class="inline-flex items-center rounded-xl border transition-all ${
+                        isActive
+                            ? "bg-emerald-600 border-emerald-600 text-white shadow-sm"
+                            : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }">
+                        <button type="button" onclick='pilihMenu("penilaian", ${safeJsonAttr(sub.id)})'
+                            class="px-3.5 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid ${meta.icon}"></i>
+                            <span>${esc(sub.nama)}</span>
+                        </button>
+                        <button type="button" onclick='hapusSubMenuPenilaian(${safeJsonAttr(sub.id)}, ${safeJsonAttr(sub.nama)})' title="Hapus Sub Menu ${esc(sub.nama)}"
+                            class="pr-2.5 pl-1 py-2 text-[11px] cursor-pointer transition-colors ${
+                                isActive ? "text-emerald-100 hover:text-rose-200" : "text-slate-400 hover:text-rose-600"
+                            }">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function tambahSubMenuPenilaian(event) {
+            event.preventDefault();
+            const input = document.getElementById("input-nama-submenu-baru");
+            const nama = input.value.trim();
+            if (!nama) return;
+
+            if (raportSubmenus.some(s => s.nama.toLowerCase() === nama.toLowerCase())) {
+                tampilkanNotif(`Sub menu "${nama}" sudah ada.`, true);
+                return;
+            }
+
+            const newId = "sub_" + Date.now();
+            const listBaru = [...raportSubmenus, { id: newId, nama: nama }];
+
+            try {
+                const updates = {};
+                updates["administrasi_digital/raport_submenu"] = listBaru;
+                updates["administrasi_digital/raport_submenu_init"] = true;
+                updates[`administrasi_digital/raport_kriteria/${newId}`] = [
+                    { id: "col_" + Date.now(), nama: "Aspek Penilaian 1" }
+                ];
+                await database.ref().update(updates);
+                input.value = "";
+                tampilkanNotif(`Sub menu "${nama}" berhasil ditambahkan.`);
+                pilihMenu("penilaian", newId);
+            } catch (e) {
+                tampilkanNotif("Gagal menambah sub menu: " + e.message, true);
+            }
+        }
+
+        async function hapusSubMenuPenilaian(subId, namaSub) {
+            if (raportSubmenus.length <= 1) {
+                tampilkanNotif("Minimal harus tersisa 1 sub menu penilaian.", true);
+                return;
+            }
+            if (!confirm(`Yakin ingin menghapus sub menu "${namaSub}" beserta seluruh kolom aspek di dalamnya?`)) return;
+
+            const listBaru = raportSubmenus.filter(s => String(s.id) !== String(subId));
+            try {
+                const updates = {};
+                updates["administrasi_digital/raport_submenu"] = listBaru;
+                updates["administrasi_digital/raport_submenu_init"] = true;
+                updates[`administrasi_digital/raport_kriteria/${subId}`] = null;
+                await database.ref().update(updates);
+
+                if (subKategoriAktif === subId && listBaru.length > 0) {
+                    subKategoriAktif = listBaru[0].id;
+                }
+                tampilkanNotif(`Sub menu "${namaSub}" dihapus.`);
+                if (menuAktif === "penilaian") {
+                    updateTampilanKategoriPenilaian();
+                }
+            } catch (e) {
+                tampilkanNotif("Gagal menghapus sub menu: " + e.message, true);
+            }
+        }
+
+        // ==================== NAVIGASI MENU & SUB MENU ====================
+        function toggleSubmenuPenilaian() {
+            submenuTerbuka = !submenuTerbuka;
+            const sub = document.getElementById("submenu-penilaian");
+            const chev = document.getElementById("chevron-penilaian");
+            if (submenuTerbuka) {
+                sub.classList.remove("hidden");
+                chev.classList.remove("-rotate-90");
+            } else {
+                sub.classList.add("hidden");
+                chev.classList.add("-rotate-90");
+            }
+        }
+
+        function pilihMenu(menu, subKategori = null, pesertaIdLangsung = null) {
+            menuAktif = menu;
+            if (subKategori && raportSubmenus.some(s => s.id === subKategori)) {
+                subKategoriAktif = subKategori;
+                paginationState.penilaian = 1;
+            } else if (!raportSubmenus.some(s => s.id === subKategoriAktif) && raportSubmenus.length > 0) {
+                subKategoriAktif = raportSubmenus[0].id;
+            }
+
+            document.querySelectorAll(".sidebar-btn").forEach(btn => {
+                btn.classList.remove("sidebar-link-active");
+                btn.classList.add("text-slate-300", "hover:bg-slate-800");
+            });
+
+            document.querySelectorAll(".raport-section").forEach(sec => sec.classList.add("hidden"));
+
+            if (menu === "peserta") {
+                document.getElementById("sec-peserta").classList.remove("hidden");
+                document.getElementById("nav-peserta").classList.add("sidebar-link-active");
+                document.getElementById("nav-peserta").classList.remove("text-slate-300", "hover:bg-slate-800");
+                document.getElementById("topbar-title").innerText = "Data Peserta";
+            } else if (menu === "penilaian") {
+                document.getElementById("sec-penilaian").classList.remove("hidden");
+                document.getElementById("nav-penilaian").classList.add("sidebar-link-active");
+                document.getElementById("nav-penilaian").classList.remove("text-slate-300", "hover:bg-slate-800");
+
+                submenuTerbuka = true;
+                document.getElementById("submenu-penilaian").classList.remove("hidden");
+                document.getElementById("chevron-penilaian").classList.remove("-rotate-90");
+
+                updateTampilanKategoriPenilaian();
+                if (pesertaIdLangsung) {
+                    document.getElementById("nilai-peserta-id").value = pesertaIdLangsung;
+                    onPilihPesertaPenilaian();
+                }
+            } else if (menu === "daftar-nilai") {
+                document.getElementById("sec-daftar-nilai").classList.remove("hidden");
+                document.getElementById("nav-daftar-nilai").classList.add("sidebar-link-active");
+                document.getElementById("nav-daftar-nilai").classList.remove("text-slate-300", "hover:bg-slate-800");
+                document.getElementById("topbar-title").innerText = "Daftar Nilai Raport";
+                renderDaftarNilai();
+            }
+
+            renderSidebarSubmenus();
+
+            if (window.innerWidth < 1024) {
+                setSidebar(false);
+            }
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        // ==================== REALTIME FIREBASE LISTENERS ====================
+        function aktifkanRealtime() {
+            // 1. Data Anggota Terdaftar
+            database.ref("administrasi_digital/anggota").on("value", snap => {
+                const val = snap.val();
+                const list = val ? Object.entries(val).map(([key, item]) => ({ ...item, id: item.id || key })) : [];
+                dataAnggota = list
+                    .filter(item => {
+                        const st = item.status || "Dikonfirmasi";
+                        return st !== "Menunggu" && st !== "Ditolak";
+                    })
+                    .sort((a, b) => (a.nama_lengkap || "").localeCompare(b.nama_lengkap || ""));
+
+                document.getElementById("badge-jml-peserta").innerText = dataAnggota.length;
+                document.getElementById("count-peserta-header").innerText = `${dataAnggota.length} Peserta Terdaftar`;
+                sinkronOpsiRayon();
+                sinkronDropdownPesertaPenilaian();
+                renderPeserta();
+                renderTabelPenilaian();
+                renderDaftarNilai();
+            });
+
+            // 2. Data Rayon
+            database.ref("administrasi_digital/rayon").on("value", snap => {
+                const val = snap.val();
+                dataRayon = val ? Object.entries(val).map(([key, item]) => ({ ...item, id: item.id || key })) : [];
+                sinkronOpsiRayon();
+            });
+
+            // 3. Sub Menu Penilaian Dinamis
+            database.ref("administrasi_digital/raport_submenu").on("value", async snap => {
+                const val = snap.val();
+                if (!val) {
+                    const initSnap = await database.ref("administrasi_digital/raport_submenu_init").once("value");
+                    if (!initSnap.val()) {
+                        await database.ref("administrasi_digital/raport_submenu").set(DEFAULT_SUBMENUS);
+                        await database.ref("administrasi_digital/raport_submenu_init").set(true);
+                        return;
+                    }
+                    raportSubmenus = [];
+                } else if (Array.isArray(val)) {
+                    raportSubmenus = val.filter(Boolean);
+                } else if (typeof val === "object") {
+                    raportSubmenus = Object.entries(val).map(([k, v]) => ({
+                        id: v.id || k,
+                        nama: v.nama || v
+                    }));
+                }
+
+                if (raportSubmenus.length > 0 && !raportSubmenus.some(s => s.id === subKategoriAktif)) {
+                    subKategoriAktif = raportSubmenus[0].id;
+                }
+
+                renderSidebarSubmenus();
+                if (menuAktif === "penilaian") {
+                    updateTampilanKategoriPenilaian();
+                } else {
+                    renderTabSubmenus();
+                }
+                renderDaftarNilai();
+            });
+
+            // 4. Kriteria / Kolom Penilaian Dinamis per Sub Menu
+            database.ref("administrasi_digital/raport_kriteria").on("value", snap => {
+                const val = snap.val();
+                if (!val) {
+                    database.ref("administrasi_digital/raport_kriteria").set(DEFAULT_KRITERIA);
+                    return;
+                }
+
+                const parsed = {};
+                Object.entries(val).forEach(([kat, rawKat]) => {
+                    if (Array.isArray(rawKat)) {
+                        parsed[kat] = rawKat.filter(Boolean);
+                    } else if (rawKat && typeof rawKat === "object") {
+                        parsed[kat] = Object.entries(rawKat).map(([k, v]) => ({
+                            id: v.id || k,
+                            nama: v.nama || v
+                        }));
+                    } else {
+                        parsed[kat] = [];
+                    }
+                });
+                raportKriteria = parsed;
+
+                renderKelolaKolom();
+                renderInputKolomPenilaian();
+                renderTabelPenilaian();
+                renderDaftarNilai();
+            });
+
+            // 5. Data Nilai Raport Siswa
+            database.ref("administrasi_digital/raport_nilai").on("value", snap => {
+                raportNilai = snap.val() || {};
+                renderInputKolomPenilaian();
+                renderTabelPenilaian();
+                renderDaftarNilai();
+            });
+        }
+
+        function sinkronOpsiRayon() {
+            const setRayon = new Set();
+            dataRayon.forEach(r => { if (r.nama_rayon_ranting) setRayon.add(r.nama_rayon_ranting.trim()); });
+            dataAnggota.forEach(a => { if (a.ranting_rayon) setRayon.add(a.ranting_rayon.trim()); });
+            const list = Array.from(setRayon).sort((a, b) => a.localeCompare(b));
+
+            document.getElementById("list-opsi-rayon").innerHTML = list.map(r => `<option value="${esc(r)}">`).join("");
+
+            ["filter-peserta-rayon", "filter-dn-rayon"].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const current = el.value;
+                el.innerHTML = `<option value="">Semua Ranting/Rayon</option>` + list.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join("");
+                el.value = current;
+            });
+        }
+
+        // ==================== 1. DATA PESERTA (EDIT & HAPUS SAJA, TANPA TAMBAH PESERTA) ====================
+        function bukaFormEditPeserta(id) {
+            const item = dataAnggota.find(a => String(a.id) === String(id));
+            if (!item) return;
+
+            document.getElementById("peserta-id").value = item.id;
+            document.getElementById("peserta-nama").value = item.nama_lengkap || "";
+            document.getElementById("peserta-nia").value = item.nia || "";
+            document.getElementById("peserta-rayon").value = item.ranting_rayon || "";
+            document.getElementById("peserta-jk").value = klasifikasiGender(item.jenis_kelamin) === "putri" ? "Putri" : "Putra";
+            document.getElementById("peserta-usia").value = item.kualifikasi_usia || "Remaja";
+            document.getElementById("peserta-tgl").value = item.tanggal_lahir || "";
+            document.getElementById("peserta-bb").value = getBeratBadanSiswa(item);
+            document.getElementById("peserta-wa").value = item.whatsapp || "";
+
+            const formBox = document.getElementById("box-form-peserta");
+            const tabelBox = document.getElementById("box-tabel-peserta");
+            formBox.classList.remove("hidden");
+            tabelBox.classList.remove("lg:col-span-3");
+            tabelBox.classList.add("lg:col-span-2");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function tutupFormEditPeserta() {
+            document.getElementById("form-peserta").reset();
+            document.getElementById("peserta-id").value = "";
+            document.getElementById("box-form-peserta").classList.add("hidden");
+            document.getElementById("box-tabel-peserta").classList.remove("lg:col-span-2");
+            document.getElementById("box-tabel-peserta").classList.add("lg:col-span-3");
+        }
+
+        function renderPeserta() {
+            const filterRayon = (document.getElementById("filter-peserta-rayon").value || "").toLowerCase();
+            const filterJk = document.getElementById("filter-peserta-jk").value;
+            const kueri = (document.getElementById("cari-peserta").value || "").toLowerCase();
+
+            const filtered = dataAnggota.filter(item => {
+                const matchRayon = !filterRayon || (item.ranting_rayon || "").trim().toLowerCase() === filterRayon;
+                const matchJk = !filterJk || klasifikasiGender(item.jenis_kelamin) === filterJk;
+                const teks = `${item.nama_lengkap || ""} ${item.nia || ""} ${item.ranting_rayon || ""} ${item.kualifikasi_usia || ""}`.toLowerCase();
+                return matchRayon && matchJk && teks.includes(kueri);
+            });
+
+            document.getElementById("count-peserta").innerText = `${filtered.length} Peserta`;
+            const { paged, startIdx } = paginateData("peserta", filtered);
+            const tbody = document.getElementById("tbody-peserta");
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Tidak ada data peserta ditemukan.</td></tr>`;
+                return;
+            }
+
+            const firstSubId = raportSubmenus.length > 0 ? raportSubmenus[0].id : "fisik";
+
+            tbody.innerHTML = paged.map((item, idx) => {
+                const foto = item.foto || "";
+                const avatarHtml = foto
+                    ? `<img src="${esc(foto)}" alt="Foto" onclick='bukaPreviewFoto(${safeJsonAttr(foto)}, ${safeJsonAttr(item.nama_lengkap)})' class="w-9 h-9 rounded-full object-cover border border-slate-200 cursor-pointer mx-auto">`
+                    : `<div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center border border-emerald-200 mx-auto">${esc(getInisial(item.nama_lengkap))}</div>`;
+
+                const umur = hitungUmurTahun(item.tanggal_lahir);
+                const kategoriGender = formatKategoriGender(item);
+                const bbStr = formatBeratBadan(getBeratBadanSiswa(item));
+
+                return `
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="border-r border-slate-200 px-3 py-3 text-center text-slate-500 font-bold">${startIdx + idx + 1}</td>
+                        <td class="border-r border-slate-200 px-4 py-3 text-center">${avatarHtml}</td>
+                        <td class="border-r border-slate-200 px-4 py-3">
+                            <p class="font-bold text-slate-800">${esc(item.nama_lengkap || "-")}</p>
+                            <p class="text-[11px] text-emerald-700 font-semibold">${esc(item.nia || "Belum ada NIA")}</p>
+                        </td>
+                        <td class="border-r border-slate-200 px-4 py-3 font-semibold text-slate-700">${esc(item.ranting_rayon || "-")}</td>
+                        <td class="border-r border-slate-200 px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${klasifikasiGender(item.jenis_kelamin) === "putra" ? "bg-blue-100 text-blue-700" : "bg-rose-100 text-rose-700"}">
+                                ${esc(kategoriGender)}
+                            </span>
+                            <div class="text-[11px] text-slate-500 mt-1 flex items-center gap-2">
+                                ${umur !== null ? `<span>${umur} Thn</span>` : ""}
+                                <span class="font-semibold text-slate-600">BB: ${esc(bbStr)}</span>
+                            </div>
+                        </td>
+                        <td class="border-r border-slate-200 px-4 py-3 text-center whitespace-nowrap">
+                            <button type="button" onclick='pilihMenu("penilaian", ${safeJsonAttr(firstSubId)}, ${safeJsonAttr(item.id)})'
+                                class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] mr-1 cursor-pointer">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i>Nilai
+                            </button>
+                            <button type="button" onclick='cetakRaportSatuSiswa(${safeJsonAttr(item.id)})'
+                                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] cursor-pointer">
+                                <i class="fa-solid fa-file-pdf text-rose-400 mr-1"></i>PDF
+                            </button>
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <button type="button" onclick='bukaFormEditPeserta(${safeJsonAttr(item.id)})' title="Edit" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold mr-1 cursor-pointer"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button" onclick='hapusPeserta(${safeJsonAttr(item.id)}, ${safeJsonAttr(item.nama_lengkap)})' title="Hapus" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        async function simpanEditPeserta(event) {
+            event.preventDefault();
+            const id = document.getElementById("peserta-id").value;
+            if (!id) return;
+
+            const existing = dataAnggota.find(a => String(a.id) === String(id));
+            if (!existing) return;
+
+            const foto = await prosesFileFoto("peserta-foto", existing.foto || "");
+            const bbInput = document.getElementById("peserta-bb").value.trim();
+
+            const payload = {
+                ...existing,
+                id: id,
+                nama_lengkap: document.getElementById("peserta-nama").value.trim(),
+                nia: document.getElementById("peserta-nia").value.trim(),
+                ranting_rayon: document.getElementById("peserta-rayon").value.trim(),
+                jenis_kelamin: document.getElementById("peserta-jk").value,
+                kualifikasi_usia: document.getElementById("peserta-usia").value,
+                tanggal_lahir: document.getElementById("peserta-tgl").value,
+                berat_badan: bbInput !== "" ? Number(bbInput) : "",
+                whatsapp: document.getElementById("peserta-wa").value.trim(),
+                foto: foto,
+                status: existing.status || "Dikonfirmasi"
+            };
+
+            try {
+                const updates = {};
+                updates[`administrasi_digital/anggota/${id}`] = payload;
+                if (raportNilai[id]) {
+                    updates[`administrasi_digital/raport_nilai/${id}/berat_badan`] = payload.berat_badan;
+                }
+                await database.ref().update(updates);
+                tampilkanNotif("Data peserta diperbarui.");
+                tutupFormEditPeserta();
+            } catch (e) {
+                tampilkanNotif("Gagal menyimpan perubahan: " + e.message, true);
+            }
+        }
+
+        async function hapusPeserta(id, nama) {
+            if (!confirm(`Yakin ingin menghapus peserta "${nama || "ini"}"?`)) return;
+            try {
+                await database.ref(`administrasi_digital/anggota/${id}`).remove();
+                await database.ref(`administrasi_digital/raport_nilai/${id}`).remove();
+                tampilkanNotif("Peserta berhasil dihapus.");
+            } catch (e) {
+                tampilkanNotif("Gagal menghapus peserta: " + e.message, true);
+            }
+        }
+
+        // ==================== 2. MENU PENILAIAN (SUB MENU DINAMIS + KOLOM DINAMIS) ====================
+        function updateTampilanKategoriPenilaian() {
+            const idxSub = raportSubmenus.findIndex(s => s.id === subKategoriAktif);
+            const subObj = idxSub >= 0 ? raportSubmenus[idxSub] : { id: subKategoriAktif, nama: "Penilaian" };
+            const meta = getSubmenuMeta(subObj.id, Math.max(0, idxSub));
+
+            document.getElementById("topbar-title").innerText = `Penilaian ${subObj.nama}`;
+            document.getElementById("penilaian-header-title").innerText = `Penilaian ${subObj.nama}`;
+            document.getElementById("penilaian-icon-box").className = meta.boxClass;
+            document.getElementById("penilaian-header-icon").className = `fa-solid ${meta.icon} text-lg`;
+            document.getElementById("label-kategori-kolom").innerText = subObj.nama.toUpperCase();
+            document.getElementById("form-judul-kategori").innerText = subObj.nama;
+            document.getElementById("tabel-judul-kategori").innerText = subObj.nama;
+
+            renderSidebarSubmenus();
+            renderTabSubmenus();
+            renderKelolaKolom();
+            onPilihPesertaPenilaian();
+            renderTabelPenilaian();
+        }
+
+        function sinkronDropdownPesertaPenilaian() {
+            const select = document.getElementById("nilai-peserta-id");
+            const current = select.value;
+            select.innerHTML = `<option value="">-- Pilih Nama Peserta --</option>` +
+                dataAnggota.map(a => {
+                    const info = `${formatKategoriGender(a)}${a.ranting_rayon ? " • " + a.ranting_rayon : ""}`;
+                    return `<option value="${esc(a.id)}">${esc(a.nama_lengkap || "-")} (${esc(info)})</option>`;
+                }).join("");
+
+            if (current && Array.from(select.options).some(o => o.value === current)) {
+                select.value = current;
+            }
+            onPilihPesertaPenilaian();
+        }
+
+        function onPilihPesertaPenilaian() {
+            const pesertaId = document.getElementById("nilai-peserta-id").value;
+            const peserta = dataAnggota.find(a => String(a.id) === String(pesertaId));
+
+            const genderEl = document.getElementById("nilai-gender-auto");
+            const usiaEl = document.getElementById("nilai-usia-auto");
+            const bbEl = document.getElementById("nilai-bb");
+
+            if (!peserta) {
+                genderEl.value = "-";
+                usiaEl.value = "-";
+                bbEl.value = "";
+                document.getElementById("nilai-catatan").value = "";
+            } else {
+                genderEl.value = formatGenderLabel(peserta.jenis_kelamin);
+                const umur = hitungUmurTahun(peserta.tanggal_lahir);
+                const katUsia = peserta.kualifikasi_usia || "Umum";
+                usiaEl.value = umur !== null ? `${katUsia} (${umur} Thn)` : katUsia;
+                bbEl.value = getBeratBadanSiswa(peserta);
+
+                const dataKat = (raportNilai[pesertaId] && raportNilai[pesertaId][subKategoriAktif]) || {};
+                document.getElementById("nilai-catatan").value = dataKat.catatan || "";
+            }
+
+            renderInputKolomPenilaian();
+        }
+
+        // Tambah & Hapus Kolom Dinamis
+        function renderKelolaKolom() {
+            const kolomList = raportKriteria[subKategoriAktif] || [];
+            const container = document.getElementById("daftar-kolom-chips");
+
+            if (kolomList.length === 0) {
+                container.innerHTML = `<span class="text-xs text-rose-500 font-semibold">Belum ada kolom penilaian. Silakan tambahkan kolom baru di atas.</span>`;
+                return;
+            }
+
+            container.innerHTML = kolomList.map((col, idx) => `
+                <div class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors">
+                    <span class="w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] flex items-center justify-center">${idx + 1}</span>
+                    <span>${esc(col.nama)}</span>
+                    <button type="button" onclick='hapusKolomPenilaian(${safeJsonAttr(col.id)}, ${safeJsonAttr(col.nama)})' title="Hapus Kolom"
+                        class="w-5 h-5 rounded-full bg-rose-100 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
+                        <i class="fa-solid fa-trash text-[10px]"></i>
+                    </button>
+                </div>
+            `).join("");
+        }
+
+        async function tambahKolomPenilaian(event) {
+            event.preventDefault();
+            const input = document.getElementById("input-nama-kolom-baru");
+            const nama = input.value.trim();
+            if (!nama) return;
+
+            const list = [...(raportKriteria[subKategoriAktif] || [])];
+            if (list.some(c => c.nama.toLowerCase() === nama.toLowerCase())) {
+                tampilkanNotif(`Kolom "${nama}" sudah ada.`, true);
+                return;
+            }
+
+            list.push({
+                id: "col_" + Date.now(),
+                nama: nama
+            });
+
+            try {
+                await database.ref(`administrasi_digital/raport_kriteria/${subKategoriAktif}`).set(list);
+                input.value = "";
+                tampilkanNotif(`Kolom "${nama}" berhasil ditambahkan.`);
+            } catch (e) {
+                tampilkanNotif("Gagal menambah kolom: " + e.message, true);
+            }
+        }
+
+        async function hapusKolomPenilaian(kolomId, namaKolom) {
+            const list = [...(raportKriteria[subKategoriAktif] || [])];
+            if (!confirm(`Hapus kolom penilaian "${namaKolom}"?`)) return;
+
+            const baru = list.filter(c => String(c.id) !== String(kolomId));
+            try {
+                await database.ref(`administrasi_digital/raport_kriteria/${subKategoriAktif}`).set(baru);
+                tampilkanNotif(`Kolom "${namaKolom}" dihapus.`);
+            } catch (e) {
+                tampilkanNotif("Gagal menghapus kolom: " + e.message, true);
+            }
+        }
+
+        function renderInputKolomPenilaian() {
+            const kolomList = raportKriteria[subKategoriAktif] || [];
+            const pesertaId = document.getElementById("nilai-peserta-id").value;
+            const existingSkor = (pesertaId && raportNilai[pesertaId] && raportNilai[pesertaId][subKategoriAktif] && raportNilai[pesertaId][subKategoriAktif].skor) || {};
+
+            const container = document.getElementById("container-input-kolom");
+            if (kolomList.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 py-2">Tambahkan minimal 1 kolom penilaian terlebih dahulu.</p>`;
+                hitungPreviewRataInput();
+                return;
+            }
+
+            container.innerHTML = kolomList.map((col, idx) => {
+                const val = existingSkor[col.id] !== undefined ? existingSkor[col.id] : "";
+                return `
+                    <div class="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                        <label class="font-semibold text-slate-700 flex-1">${idx + 1}. ${esc(col.nama)}</label>
+                        <input type="number" min="0" max="100" step="1" data-kolom-id="${esc(col.id)}"
+                            value="${esc(val)}" oninput="hitungPreviewRataInput()" required placeholder="0-100"
+                            class="input-skor-dinamis w-24 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-center font-bold text-slate-800 focus:outline-none focus:border-emerald-500">
+                    </div>
+                `;
+            }).join("");
+
+            hitungPreviewRataInput();
+        }
+
+        function hitungPreviewRataInput() {
+            const inputs = document.querySelectorAll(".input-skor-dinamis");
+            let total = 0, count = 0;
+            inputs.forEach(inp => {
+                if (inp.value !== "") {
+                    const n = parseFloat(inp.value);
+                    if (!isNaN(n)) {
+                        total += Math.min(100, Math.max(0, n));
+                        count++;
+                    }
+                }
+            });
+            const rata = count > 0 ? Math.round((total / count) * 10) / 10 : 0;
+            document.getElementById("preview-rata-kategori").innerText = `Rata-rata: ${rata}`;
+        }
+
+        async function simpanPenilaian(event) {
+            event.preventDefault();
+            const pesertaId = document.getElementById("nilai-peserta-id").value;
+            if (!pesertaId) {
+                tampilkanNotif("Pilih nama peserta terlebih dahulu.", true);
+                return;
+            }
+
+            const kolomList = raportKriteria[subKategoriAktif] || [];
+            if (kolomList.length === 0) {
+                tampilkanNotif("Tambahkan minimal 1 kolom penilaian.", true);
+                return;
+            }
+
+            const skorMap = {};
+            document.querySelectorAll(".input-skor-dinamis").forEach(inp => {
+                const kolId = inp.dataset.kolomId;
+                const val = Math.min(100, Math.max(0, Number(inp.value || 0)));
+                skorMap[kolId] = val;
+            });
+
+            const bbValRaw = document.getElementById("nilai-bb").value.trim();
+            const bbVal = bbValRaw !== "" ? Number(bbValRaw) : "";
+
+            const payload = {
+                skor: skorMap,
+                catatan: document.getElementById("nilai-catatan").value.trim(),
+                updated_at: new Date().toISOString()
+            };
+
+            try {
+                const updates = {};
+                updates[`administrasi_digital/raport_nilai/${pesertaId}/${subKategoriAktif}`] = payload;
+                updates[`administrasi_digital/raport_nilai/${pesertaId}/berat_badan`] = bbVal;
+                updates[`administrasi_digital/anggota/${pesertaId}/berat_badan`] = bbVal;
+                await database.ref().update(updates);
+
+                const peserta = dataAnggota.find(a => String(a.id) === String(pesertaId));
+                const subObj = raportSubmenus.find(s => s.id === subKategoriAktif);
+                tampilkanNotif(`Nilai ${subObj ? subObj.nama : subKategoriAktif} untuk ${peserta ? peserta.nama_lengkap : "peserta"} disimpan.`);
+            } catch (e) {
+                tampilkanNotif("Gagal menyimpan penilaian: " + e.message, true);
+            }
+        }
+
+        function resetFormPenilaian() {
+            document.getElementById("nilai-peserta-id").value = "";
+            onPilihPesertaPenilaian();
+        }
+
+        function hitungRataKategori(pesertaId, kategori) {
+            const kolomList = raportKriteria[kategori] || [];
+            const dataKat = raportNilai[pesertaId] && raportNilai[pesertaId][kategori];
+            if (!dataKat || !dataKat.skor || kolomList.length === 0) return null;
+
+            let total = 0, count = 0;
+            kolomList.forEach(col => {
+                const v = dataKat.skor[col.id];
+                if (v !== undefined && v !== null && v !== "" && !isNaN(Number(v))) {
+                    total += Number(v);
+                    count++;
+                }
+            });
+            if (count === 0) return null;
+            return Math.round((total / count) * 10) / 10;
+        }
+
+        function renderTabelPenilaian() {
+            const kolomList = raportKriteria[subKategoriAktif] || [];
+            const thead = document.getElementById("thead-penilaian");
+            const tbody = document.getElementById("tbody-penilaian");
+
+            thead.innerHTML = `
+                <tr class="bg-slate-50 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    <th class="border border-slate-200 px-3 py-3 text-center w-12">No</th>
+                    <th class="border border-slate-200 px-3 py-3">Nama Peserta</th>
+                    <th class="border border-slate-200 px-3 py-3">Gender, Usia &amp; BB</th>
+                    ${kolomList.map(c => `<th class="border border-slate-200 px-3 py-3 text-center">${esc(c.nama)}</th>`).join("")}
+                    <th class="border border-slate-200 px-3 py-3 text-center bg-emerald-50 text-emerald-800">Rata-rata</th>
+                    <th class="border border-slate-200 px-3 py-3 text-center">Aksi</th>
+                </tr>
+            `;
+
+            const kueri = (document.getElementById("cari-penilaian").value || "").toLowerCase();
+            const daftar = dataAnggota.filter(a => {
+                const teks = `${a.nama_lengkap || ""} ${a.ranting_rayon || ""}`.toLowerCase();
+                return teks.includes(kueri);
+            });
+
+            const { paged, startIdx } = paginateData("penilaian", daftar);
+            const totalCols = 5 + kolomList.length;
+
+            if (daftar.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${totalCols}" class="text-center py-8 text-slate-400">Belum ada peserta terdaftar.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = paged.map((item, idx) => {
+                const dataKat = (raportNilai[item.id] && raportNilai[item.id][subKategoriAktif]) || {};
+                const skorMap = dataKat.skor || {};
+                const rata = hitungRataKategori(item.id, subKategoriAktif);
+                const kategoriGender = formatKategoriGender(item);
+                const umur = hitungUmurTahun(item.tanggal_lahir);
+                const bbStr = formatBeratBadan(getBeratBadanSiswa(item));
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="border border-slate-200 px-3 py-2.5 text-center text-slate-500 font-bold">${startIdx + idx + 1}</td>
+                        <td class="border border-slate-200 px-3 py-2.5">
+                            <p class="font-bold text-slate-800">${esc(item.nama_lengkap || "-")}</p>
+                            <p class="text-[10px] text-slate-400">${esc(item.ranting_rayon || "-")}</p>
+                        </td>
+                        <td class="border border-slate-200 px-3 py-2.5 whitespace-nowrap">
+                            <span class="font-semibold text-slate-700">${esc(kategoriGender)}</span>
+                            <div class="text-[10px] text-slate-500 mt-0.5">
+                                ${umur !== null ? `${umur} Thn • ` : ""}BB: <b>${esc(bbStr)}</b>
+                            </div>
+                        </td>
+                        ${kolomList.map(c => {
+                            const v = skorMap[c.id];
+                            return `<td class="border border-slate-200 px-3 py-2.5 text-center font-bold ${v !== undefined ? "text-slate-800" : "text-slate-300"}">${v !== undefined ? esc(v) : "-"}</td>`;
+                        }).join("")}
+                        <td class="border border-slate-200 px-3 py-2.5 text-center font-black bg-emerald-50/40 ${rata !== null ? "text-emerald-700" : "text-slate-300"}">
+                            ${rata !== null ? rata : "-"}
+                        </td>
+                        <td class="border border-slate-200 px-3 py-2.5 text-center whitespace-nowrap">
+                            <button type="button" onclick='pilihPesertaUntukEdit(${safeJsonAttr(item.id)})' title="Input / Edit Nilai"
+                                class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold mr-1 cursor-pointer">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            ${rata !== null ? `
+                                <button type="button" onclick='hapusNilaiKategori(${safeJsonAttr(item.id)}, ${safeJsonAttr(item.nama_lengkap)})' title="Hapus Nilai"
+                                    class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold cursor-pointer">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            ` : ""}
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        function pilihPesertaUntukEdit(pesertaId) {
+            document.getElementById("nilai-peserta-id").value = pesertaId;
+            onPilihPesertaPenilaian();
+            document.getElementById("form-penilaian").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        async function hapusNilaiKategori(pesertaId, nama) {
+            const subObj = raportSubmenus.find(s => s.id === subKategoriAktif);
+            const label = subObj ? subObj.nama : subKategoriAktif;
+            if (!confirm(`Hapus nilai ${label} milik "${nama}"?`)) return;
+            try {
+                await database.ref(`administrasi_digital/raport_nilai/${pesertaId}/${subKategoriAktif}`).remove();
+                tampilkanNotif(`Nilai ${label} dihapus.`);
+            } catch (e) {
+                tampilkanNotif("Gagal menghapus nilai: " + e.message, true);
+            }
+        }
+
+        // ==================== 3. MENU DAFTAR NILAI ====================
+        function getFilteredDaftarNilai() {
+            const filterRayon = (document.getElementById("filter-dn-rayon").value || "").toLowerCase();
+            const filterJk = document.getElementById("filter-dn-jk").value;
+            const kueri = (document.getElementById("cari-daftar-nilai").value || "").toLowerCase();
+
+            return dataAnggota.filter(item => {
+                const matchRayon = !filterRayon || (item.ranting_rayon || "").trim().toLowerCase() === filterRayon;
+                const matchJk = !filterJk || klasifikasiGender(item.jenis_kelamin) === filterJk;
+                const teks = `${item.nama_lengkap || ""} ${item.nia || ""} ${item.ranting_rayon || ""} ${item.kualifikasi_usia || ""}`.toLowerCase();
+                return matchRayon && matchJk && teks.includes(kueri);
+            });
+        }
+
+        function hitungNilaiAkhirSiswa(pesertaId) {
+            const perSub = {};
+            const terisi = [];
+            raportSubmenus.forEach(sub => {
+                const rata = hitungRataKategori(pesertaId, sub.id);
+                perSub[sub.id] = rata;
+                if (rata !== null) terisi.push(rata);
+            });
+
+            const nilaiAkhir = terisi.length > 0
+                ? Math.round((terisi.reduce((s, v) => s + v, 0) / terisi.length) * 10) / 10
+                : null;
+
+            return { perSub, nilaiAkhir };
+        }
+
+        function renderDaftarNilai() {
+            const thead = document.getElementById("thead-daftar-nilai");
+            if (thead) {
+                thead.innerHTML = `
+                    <tr class="bg-emerald-700 text-white text-[11px] font-bold uppercase tracking-wider">
+                        <th class="border border-slate-400 px-3 py-3 text-center w-14">No</th>
+                        <th class="border border-slate-400 px-4 py-3">Nama Anggota</th>
+                        ${raportSubmenus.map(sub => `<th class="border border-slate-400 px-3 py-3 text-center">${esc(sub.nama)}</th>`).join("")}
+                        <th class="border border-slate-400 px-4 py-3 text-center">Nilai</th>
+                        <th class="border border-slate-400 px-3 py-3 text-center w-36">Cetak Raport</th>
+                    </tr>
+                `;
+            }
+
+            const filtered = getFilteredDaftarNilai();
+            document.getElementById("count-daftar-nilai").innerText = `${filtered.length} Anggota`;
+
+            const { paged, startIdx } = paginateData("daftarNilai", filtered);
+            const tbody = document.getElementById("tbody-daftar-nilai");
+            const totalCols = 4 + raportSubmenus.length;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${totalCols}" class="border border-slate-300 text-center py-8 text-slate-400">Tidak ada data anggota ditemukan.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = paged.map((item, idx) => {
+                const { perSub, nilaiAkhir } = hitungNilaiAkhirSiswa(item.id);
+                const pred = getPredikat(nilaiAkhir);
+                const kategoriGender = formatKategoriGender(item);
+                const bbStr = formatBeratBadan(getBeratBadanSiswa(item));
+
+                const subCells = raportSubmenus.map(sub => {
+                    const val = perSub[sub.id];
+                    return `
+                        <td class="border border-slate-300 px-3 py-3 text-center font-bold ${val !== null ? "text-slate-800" : "text-slate-300"}">
+                            ${val !== null ? val : "-"}
+                        </td>
+                    `;
+                }).join("");
+
+                return `
+                    <tr class="hover:bg-emerald-50/30 transition-colors">
+                        <td class="border border-slate-300 px-3 py-3 text-center font-bold text-slate-600">${startIdx + idx + 1}</td>
+                        <td class="border border-slate-300 px-4 py-3">
+                            <p class="font-bold text-slate-900 text-xs sm:text-sm leading-snug">${esc(item.nama_lengkap || "-")}</p>
+                            <p class="text-[11px] font-semibold text-emerald-700 mt-0.5">
+                                ${esc(kategoriGender)}${bbStr !== "-" ? ` <span class="text-slate-400 font-normal">• BB: ${esc(bbStr)}</span>` : ""}
+                            </p>
+                        </td>
+                        ${subCells}
+                        <td class="border border-slate-300 px-4 py-3 text-center">
+                            <span class="text-sm font-black ${nilaiAkhir !== null ? "text-emerald-700" : "text-slate-300"}">
+                                ${nilaiAkhir !== null ? nilaiAkhir : "-"}
+                            </span>
+                            <div class="mt-1">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${pred.badge}">
+                                    ${pred.kode !== "-" ? `${pred.kode} (${pred.label})` : pred.label}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="border border-slate-300 px-3 py-3 text-center whitespace-nowrap">
+                            <button type="button" onclick='cetakRaportSatuSiswa(${safeJsonAttr(item.id)})'
+                                class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold px-3 py-2 rounded-lg shadow-sm transition-colors cursor-pointer">
+                                <i class="fa-solid fa-file-pdf text-rose-400"></i>
+                                <span>Cetak PDF</span>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        // ==================== CETAK PDF RAPORT RAPI PER SISWA (1 HALAMAN PENUH / TANPA TERPOTONG) ====================
+        function buatHtmlSatuRaport(item) {
+            const periode = (document.getElementById("raport-periode").value || "Semester Ganjil 2026").trim();
+            const namaPembina = (document.getElementById("raport-pembina").value || "Ketua Dangsanak Sport Club").trim();
+            const namaPelatih = (document.getElementById("raport-pelatih").value || "Tim Pelatih Dangsanak Sport Club").trim();
+            const tanggalCetak = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+
+            const { perSub, nilaiAkhir } = hitungNilaiAkhirSiswa(item.id);
+            const pred = getPredikat(nilaiAkhir);
+            const umur = hitungUmurTahun(item.tanggal_lahir);
+            const kategoriGender = formatKategoriGender(item);
+            const bbStr = formatBeratBadan(getBeratBadanSiswa(item));
+
+            const fotoHtml = (item.foto && !item.foto.includes("via.placeholder.com"))
+                ? `<img src="${esc(item.foto)}" alt="Foto" class="raport-foto">`
+                : `<div class="raport-inisial">${esc(getInisial(item.nama_lengkap))}</div>`;
+
+            function renderTabelKategori(judul, katKey, rataKat) {
+                const kolomList = raportKriteria[katKey] || [];
+                const dataKat = (raportNilai[item.id] && raportNilai[item.id][katKey]) || {};
+                const skorMap = dataKat.skor || {};
+
+                const rows = kolomList.length === 0
+                    ? `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada aspek penilaian</td></tr>`
+                    : kolomList.map((col, i) => {
+                        const skor = skorMap[col.id];
+                        const adaSkor = skor !== undefined && skor !== null && skor !== "" && !isNaN(Number(skor));
+                        const predCol = getPredikat(adaSkor ? Number(skor) : null);
+                        return `
+                            <tr>
+                                <td style="width:7%; text-align:center;">${i + 1}</td>
+                                <td style="width:55%;">${esc(col.nama)}</td>
+                                <td style="width:18%; text-align:center; font-weight:700;">${adaSkor ? esc(skor) : "-"}</td>
+                                <td style="width:20%; text-align:center;">${adaSkor ? esc(predCol.kode + " - " + predCol.label) : "-"}</td>
+                            </tr>
+                        `;
+                    }).join("");
+
+                return `
+                    <div>
+                        <div class="raport-section-title">
+                            <span>${esc(judul)}</span>
+                            <span>Rata-rata: ${rataKat !== null ? rataKat : "-"}</span>
+                        </div>
+                        <table class="raport-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:7%; text-align:center;">No</th>
+                                    <th style="width:55%;">Aspek Penilaian</th>
+                                    <th style="width:18%; text-align:center;">Nilai</th>
+                                    <th style="width:20%; text-align:center;">Predikat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            const bagianTabelPenilaian = raportSubmenus.map((sub, idx) => {
+                const huruf = String.fromCharCode(65 + idx);
+                return renderTabelKategori(`${huruf}. PENILAIAN ${sub.nama.toUpperCase()}`, sub.id, perSub[sub.id]);
+            }).join("");
+
+            const catatanList = raportSubmenus.map(sub => {
+                const cat = raportNilai[item.id]?.[sub.id]?.catatan || "";
+                return cat ? `<b>${esc(sub.nama)}:</b> ${esc(cat)}` : "";
+            }).filter(Boolean);
+
+            const gabunganCatatan = catatanList.join("<br>") || "Pertahankan kedisiplinan latihan dan terus tingkatkan kemampuan di seluruh aspek penilaian.";
+
+            return `
+                <div class="raport-page">
+                    <!-- KOP RAPORT -->
+                    <div class="raport-kop">
+                        <div>
+                            <div style="font-size:13pt; font-weight:900; color:#065f46; text-transform:uppercase; letter-spacing:0.03em;">
+                                DANGSANAK SPORT CLUB
+                            </div>
+                            <div style="font-size:10pt; font-weight:700; color:#0f172a; margin-top:1px;">
+                                RAPORT EVALUASI HASIL LATIHAN ANGGOTA
+                            </div>
+                        </div>
+                        <div style="text-align:right; font-size:8pt; color:#475569;">
+                            <div>Periode: <b>${esc(periode)}</b></div>
+                            <div>Tanggal: <b>${esc(tanggalCetak)}</b></div>
+                        </div>
+                    </div>
+
+                    <!-- IDENTITAS PESERTA -->
+                    <div class="raport-identitas">
+                        ${fotoHtml}
+                        <div class="raport-bio-grid">
+                            <div>Nama Lengkap : <b>${esc(item.nama_lengkap || "-")}</b></div>
+                            <div>Ranting / Rayon : <b>${esc(item.ranting_rayon || "-")}</b></div>
+                            <div>Nomor Induk (NIA) : <b>${esc(item.nia || "-")}</b></div>
+                            <div>Kategori &amp; Gender : <b>${esc(kategoriGender)}</b></div>
+                            <div>Usia : <b>${umur !== null ? umur + " Tahun" : (item.kualifikasi_usia || "-")}</b></div>
+                            <div>Berat Badan : <b>${esc(bbStr)}</b></div>
+                            <div>No. WhatsApp : <b>${esc(item.whatsapp || "-")}</b></div>
+                            <div>Status Anggota : <b>Aktif / Terdaftar</b></div>
+                        </div>
+                    </div>
+
+                    <!-- TABEL PENILAIAN DINAMIS -->
+                    ${bagianTabelPenilaian}
+
+                    <!-- RINGKASAN NILAI AKHIR & CATATAN -->
+                    <div class="raport-summary">
+                        <div class="raport-nilai-box">
+                            <div style="font-size:7.5pt; font-weight:700; color:#065f46; text-transform:uppercase;">Nilai Akhir Raport</div>
+                            <div style="font-size:20pt; font-weight:900; color:#047857; line-height:1.15; margin:2px 0;">
+                                ${nilaiAkhir !== null ? nilaiAkhir : "-"}
+                            </div>
+                            <div style="font-size:8pt; font-weight:700; color:#0f172a;">
+                                ${pred.kode !== "-" ? `Predikat ${pred.kode} (${pred.label})` : "Belum Dinilai"}
+                            </div>
+                        </div>
+                        <div class="raport-catatan-box">
+                            <div style="font-weight:700; color:#065f46; text-transform:uppercase; font-size:7.5pt; margin-bottom:3px;">
+                                Catatan &amp; Evaluasi Pelatih:
+                            </div>
+                            <div style="color:#334155; line-height:1.4;">
+                                ${gabunganCatatan}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TANDA TANGAN -->
+                    <div class="raport-ttd">
+                        <div style="width:42%;">
+                            <div>Mengetahui,</div>
+                            <div style="font-weight:700;">Ketua / Pembina</div>
+                            <div style="height:42px;"></div>
+                            <div style="font-weight:700; text-decoration:underline;">${esc(namaPembina)}</div>
+                        </div>
+                        <div style="width:42%;">
+                            <div>${esc(tanggalCetak)}</div>
+                            <div style="font-weight:700;">Pelatih Penilai</div>
+                            <div style="height:42px;"></div>
+                            <div style="font-weight:700; text-decoration:underline;">${esc(namaPelatih)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function cetakRaportSatuSiswa(pesertaId) {
+            const siswa = dataAnggota.find(a => String(a.id) === String(pesertaId));
+            if (!siswa) {
+                tampilkanNotif("Data siswa tidak ditemukan.", true);
+                return;
+            }
+            document.getElementById("print-area").innerHTML = buatHtmlSatuRaport(siswa);
+            setTimeout(() => window.print(), 150);
+        }
+
+        function cetakSemuaRaportPDF() {
+            const list = getFilteredDaftarNilai();
+            if (list.length === 0) {
+                tampilkanNotif("Tidak ada data anggota untuk dicetak.", true);
+                return;
+            }
+            document.getElementById("print-area").innerHTML = list.map(siswa => buatHtmlSatuRaport(siswa)).join("");
+            setTimeout(() => window.print(), 200);
+        }
+
+        // Preview Foto
+        function bukaPreviewFoto(src, caption) {
+            document.getElementById("preview-img").src = src;
+            document.getElementById("preview-caption").innerText = caption || "";
+            document.getElementById("modal-preview").classList.remove("hidden");
+        }
+
+        function tutupPreviewFoto() {
+            document.getElementById("modal-preview").classList.add("hidden");
+        }
+
+        // Inisialisasi Halaman
+        window.addEventListener("DOMContentLoaded", () => {
+            terapkanStateSidebar();
+            renderSidebarSubmenus();
+            pilihMenu("peserta");
+            aktifkanRealtime();
+        });
+    </script>
+</body>
+</html>
